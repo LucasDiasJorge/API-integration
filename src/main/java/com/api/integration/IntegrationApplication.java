@@ -9,6 +9,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
+import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -22,46 +27,33 @@ public class IntegrationApplication {
 	}
 
 	@GetMapping("/")
-	public String index(){
+	String integration() throws IOException, InterruptedException {
 
-		try{
+		HttpRequest requestGet = HttpRequest.newBuilder()
+				.GET()
+				.uri(URI.create("http://localhost:8888/api/v1/ping"))
+				//.setHeader("Authorization", "Bearer " + token)
+				.build();
 
-			RestTemplate restTemplate = new RestTemplate();
 
-			// URI
-			String url = "http://localhost:8888/api/v1/ping";
+		HttpRequest requestPost = HttpRequest.newBuilder()
+				.POST(HttpRequest.BodyPublishers.ofString("{\"some body text\"}"))
+				.setHeader("Content-Type", "application/json")
+				.uri(URI.create("http://localhost:8888/api/v1/ping"))
+				//.setHeader("Authorization", "Bearer " + token)
+				.build();
 
-			// Headers
-			HttpHeaders headers = new HttpHeaders();
-			headers.setContentType(MediaType.APPLICATION_JSON);
+		HttpClient client = HttpClient.newBuilder().build();
 
-			// Body
-			Map<String, String> requestBody = new HashMap<>();
-			requestBody.put("campo1", "valor1");
-			requestBody.put("campo2", "valor2");
+		HttpResponse<String> response = client.send(requestPost,
+				HttpResponse.BodyHandlers.ofString());
 
-			// Set body and headers
-			HttpEntity<Map<String, String>> entity = new HttpEntity<>(requestBody, headers);
+        /*Gson json = new Gson();
 
-			// Get template
-			//String response = restTemplate.getForObject(url, String.class);
+        Map map = json.fromJson(response.body(), Map.class);
+        */
 
-			// Post template
-			Map response = restTemplate.postForObject(url,entity, Map.class);
-
-			// Get data
-			Map data = (Map) response.get("data");
-
-			// Data manipulation
-			String version = (String) data.get("version");
-
-			System.out.println(version);
-
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
-
-		return "Success";
+		return response.body();
 	}
 
 }
